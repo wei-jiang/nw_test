@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head lang="zh">
+  <meta charset="UTF-8">
+  <meta name="author" content="david">
+  <title>inter c++ demo</title>
+  <script type="text/javascript" src="libs/qr.min.js"></script>
+  <script type="text/javascript" src="libs/jquery-2.1.4.min.js"></script>
+  <script type="text/javascript" src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <label id="msg"> </label>
+    <br>
+  <script>
+      var count = 0;
+    window.socket = io.connect('http://localhost:12345');
+    //////////////////////////////////////////////////////////
+    window.wx_sock = io.connect('http://wxpay.ily365.cn/', {forceNew: true});
+    wx_sock.on("connect", function() {
+        console.log("on_connected to wx server");
+        wx_sock.emit('req_product_qr', { total_fee: 100 });        
+    });
+    wx_sock.on("res_product_qr", function(data) {
+        console.log(data);
+        qr.canvas({ 
+            size : 8,
+            background : '#fff',
+            foreground : '#179',
+            canvas: document.getElementById('qr-code'), 
+            value: data.code_url }); 
+    });
+    wx_sock.on("wxpay_return", function(data) {
+        console.log(data);
+        alert("微信支付成功");
+    });
+    
+    ///////////////////////////////////////////////////////////
+    socket.on("connect", function() {
+        console.log("on_connected to server");
+        socket.emit('peer_online', { ability: 0 });
+    });
+    socket.on("from_svr1", function(data) {
+        alert("from_svr1 : "+JSON.stringify(data) );
+    });
+    socket.on("from_svr2", function(data) {
+        alert("from_svr2 : "+JSON.stringify(data) );
+    });
+    socket.on("from_svr_period", function(data) {
+        $('#msg').text(JSON.stringify(data) + count++);
+    });
+    function click_cmd1() {
+        socket.emit('cli_cmd1',{});
+    }
+    function click_cmd2(){
+        socket.emit('cli_cmd2',{});
+    }
+    function click_ali_buy(){
+        window.location.href = "http://127.0.0.1:12345/create_direct_pay_by_user";
+    }
+
+  </script>
+  inter c++ demo
+  <button onclick="click_cmd1()">获取dll版本号</button>
+  <button onclick="click_cmd2()">加载工行dll</button>
+  <br>
+  <button onclick="click_ali_buy()">支付宝购买测试商品</button>
+  <h2>微信扫码支付测试</h2>
+  <canvas id="qr-code"></canvas>
+</body>
+</html>
